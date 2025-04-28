@@ -1,4 +1,11 @@
-import { createApp } from 'vue'
-import App from './App.vue'
+// src/main.js
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router/index.js';
 
-createApp(App).mount('#app')
+import './assets/style.css'; // Notre feuille de style globale
+
+const app = createApp(App);
+
+app.use(router);
+app.mount('#app');

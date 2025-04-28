@@ -1,26 +1,36 @@
+<!-- src/App.vue -->
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="app">
+    <header class="app-header">
+      <h1>Recettes Personnalisées</h1>
+
+      <nav class="nav-bar">
+        <router-link to="/">Accueil</router-link>
+        <router-link to="/create">Créer une recette</router-link>
+        <router-link to="/ingredients">Gérer Ingrédients</router-link>
+        <!-- nouveau lien -->
+        <router-link to="/generate">Générer une recette</router-link>
+      </nav>
+
+      <SearchBar @search="handleSearch" />
+    </header>
+
+    <main class="app-main">
+      <router-view :search-query="searchQuery" />
+    </main>
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+import SearchBar from "./components/SearchBar.vue";
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+  name: "AppRoot",
+  components: { SearchBar },
+  data: () => ({ searchQuery: "" }),
+  methods: {
+    handleSearch(q) {
+      this.searchQuery = q;
+    },
+  },
+};
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
