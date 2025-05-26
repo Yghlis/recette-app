@@ -12,20 +12,20 @@
         <router-link to="/generate">Générer une recette</router-link>
       </nav>
 
-      <SearchBar @search="handleSearch" />
+
     </header>
 
     <main class="app-main">
-      <router-view :search-query="searchQuery" />
+    
     </main>
   </div>
 </template>
 
 <script>
-
+import SearchBar from "./components/SearchBar.vue";
 export default {
   name: "AppRoot",
-
+  components: { SearchBar },
   data: () => ({ searchQuery: "" }),
   methods: {
     handleSearch(q) {

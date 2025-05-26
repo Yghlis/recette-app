@@ -1,27 +1,27 @@
 <!-- src/components/SearchBar.vue -->
 <template>
   <div class="search-bar">
-    <!-- 1) Boutons de filtre multi-select -->
+    <!-- Filtres par type de plat -->
     <div class="type-filters">
       <button
         v-for="t in types"
         :key="t"
-        :class="{ active: selectedTypes.includes(t) }"
+        :class="{ active: selectedType === t }"
         @click="toggleType(t)"
       >
         {{ t }}
       </button>
       <button
-        v-if="selectedTypes.length"
+        v-if="selectedType"
         class="clear"
-        title="Tout effacer"
-        @click="clearTypes"
+        title="Tout afficher"
+        @click="clearType"
       >
         ✕
       </button>
     </div>
 
-    <!-- 2) Input + bouton -->
+    <!-- Input + bouton -->
     <div class="input-group">
       <input
         type="text"
@@ -35,14 +35,14 @@
       </button>
     </div>
 
-    <!-- 3) Suggestions -->
+    <!-- Suggestions -->
     <ul v-if="suggestions.length && showSuggestions" class="suggestions">
       <li
-        v-for="r in suggestions"
-        :key="r.id"
-        @click="selectSuggestion(r)"
+        v-for="recipe in suggestions"
+        :key="recipe.id"
+        @click="selectSuggestion(recipe)"
       >
-        {{ r.Name }} <small>({{ r.DishType }})</small>
+        {{ recipe.Name }} <small>({{ recipe.DishType }})</small>
       </li>
     </ul>
   </div>
@@ -54,39 +54,36 @@ export default {
   data() {
     return {
       localQuery: "",
+      selectedType: "",       // type filtré
       types: ["Entrée", "Plat", "Dessert", "Autre"],
-      selectedTypes: [],
       suggestions: [],
       loading: false,
       showSuggestions: false,
     };
   },
   watch: {
-    // relance auto-complétion à chaque frappe ou changement de filtres
+    // dès que la saisie ou le filtre type change, on met à jour les suggestions
     localQuery() {
       this.fetchSuggestions();
     },
-    selectedTypes() {
+    selectedType() {
       this.fetchSuggestions();
-    },
+    }
   },
   methods: {
+    // clique sur un type : active/désactive
     toggleType(type) {
-      const idx = this.selectedTypes.indexOf(type);
-      if (idx === -1) {
-        this.selectedTypes.push(type);
-      } else {
-        this.selectedTypes.splice(idx, 1);
-      }
+      this.selectedType = this.selectedType === type ? "" : type;
     },
-    clearTypes() {
-      this.selectedTypes = [];
+    clearType() {
+      this.selectedType = "";
     },
 
+    // récupère autocomplete via /api/recherche?q=…&type=…
     async fetchSuggestions() {
       const q = this.localQuery.trim();
-      // si tout est vide, on ne montre ni suggestion ni appel réseau
-      if (!q && this.selectedTypes.length === 0) {
+      // on n'affiche pas de liste vide si tout est vide
+      if (!q && !this.selectedType) {
         this.suggestions = [];
         this.showSuggestions = false;
         return;
@@ -95,9 +92,8 @@ export default {
       this.loading = true;
       try {
         const params = new URLSearchParams();
-        if (q) params.append("q", q);
-        // un param type=<t> par filtre
-        this.selectedTypes.forEach(t => params.append("type", t));
+        if (q)             params.append("q", q);
+        if (this.selectedType) params.append("type", this.selectedType);
 
         const res = await fetch(
           `http://localhost:3000/api/recherche?${params.toString()}`
@@ -117,19 +113,22 @@ export default {
       this.localQuery = recipe.Name;
       this.showSuggestions = false;
       this.suggestions = [];
+      // on émet l'ensemble des résultats sous forme de tableau
       this.$emit("search", [recipe]);
     },
 
+    // clique sur "Rechercher" ou Enter
     async emitSearch() {
       const q = this.localQuery.trim();
-      if (!q && this.selectedTypes.length === 0) return;
+      // si ni texte ni filtre, on ne fait rien
+      if (!q && !this.selectedType) return;
 
       this.loading = true;
       this.showSuggestions = false;
       try {
         const params = new URLSearchParams();
-        if (q) params.append("q", q);
-        this.selectedTypes.forEach(t => params.append("type", t));
+        if (q)             params.append("q", q);
+        if (this.selectedType) params.append("type", this.selectedType);
 
         const res = await fetch(
           `http://localhost:3000/api/recherche?${params.toString()}`
@@ -153,33 +152,33 @@ export default {
   max-width: 600px;
 }
 
-/* 1) filtres orange */
+/* boutons de type */
 .type-filters {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 .type-filters button {
-  padding: 0.4rem 0.8rem;
-  border: 1px solid #f6931e;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #ccc;
   background: white;
-  color: #f6931e;
-  border-radius: 3px;
   cursor: pointer;
-  transition: background .2s, color .2s;
+  border-radius: 3px;
 }
 .type-filters button.active {
-  background: #f6931e;
+  background: #42b983;
   color: white;
+  border-color: #42b983;
 }
 .type-filters button.clear {
   background: transparent;
   border: none;
   color: #666;
   font-weight: bold;
+  cursor: pointer;
 }
 
-/* 2) input + bouton */
+/* input + bouton */
 .input-group {
   display: flex;
 }
@@ -190,13 +189,9 @@ export default {
 .input-group button {
   padding: 0.5rem 1rem;
   margin-left: 0.5rem;
-  background: #42b983;
-  color: white;
-  border: none;
-  cursor: pointer;
 }
 
-/* 3) suggestions */
+/* suggestions */
 .suggestions {
   position: absolute;
   top: 100%;

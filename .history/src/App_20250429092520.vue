@@ -25,7 +25,7 @@
 
 export default {
   name: "AppRoot",
-
+  components: { SearchBar },
   data: () => ({ searchQuery: "" }),
   methods: {
     handleSearch(q) {

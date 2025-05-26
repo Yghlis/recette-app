@@ -22,10 +22,10 @@
 </template>
 
 <script>
-
+import SearchBar from "./components/SearchBar.vue";
 export default {
   name: "AppRoot",
-
+  components: { SearchBar },
   data: () => ({ searchQuery: "" }),
   methods: {
     handleSearch(q) {

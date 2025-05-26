@@ -28,10 +28,7 @@
 
       <div class="form-group">
         <label>Type de plat :</label>
-        <select v-model="formData.DishType" required>
-          <option value="" disabled>Choisir un type de plat</option>
-          <option v-for="type in types" :key="type" :value="type">{{ type }}</option>
-        </select>
+        <input v-model="dishTypeInput" placeholder="Exemple : Plat, Dessert" />
       </div>
 
       <h3>Ingrédients</h3>
@@ -80,7 +77,6 @@
             <option value="mL">mL</option>
             <option value="L">L</option>
             <option value="cuillere">cuillère à soupe</option>
-            <option value="piece">pièce</option>
             <option value="pinces">pincée</option>
           </select>
         </div>
@@ -113,7 +109,7 @@ export default {
         DishType: "",
       },
       intolerancesInput: "",
-      types: ["Entrée", "Plat", "Dessert", "Autre"],
+      dishTypeInput: "",
       ingredientsDetails: [
         { Nom: "", Quantite: 1, Unite: "", suggestions: [] },
       ],
@@ -121,7 +117,6 @@ export default {
     };
   },
   async created() {
-    // Chargement de la liste d'ingrédients pour autocomplete
     try {
       const r = await fetch("http://localhost:3000/api/ingredients");
       this.allIngredients = await r.json();
@@ -133,18 +128,24 @@ export default {
     if (!id) return;
     this.isEdit = true;
 
-    // Chargement de la recette pour édition
     try {
       const r = await fetch(`http://localhost:3000/api/recettes/${id}`);
       const d = await r.json();
 
+      const servings =
+        d.Servings ?? d["Nombre de personnes"] ?? this.formData.Servings;
+
       this.formData = {
         ...this.formData,
         ...d,
-        Servings: d.Servings ?? this.formData.Servings,
-        DishType: typeof d.DishType === 'string' ? d.DishType : (d.DishType || '').toString(),
+        Servings: servings,
+        DishType:
+          typeof d.DishType === "string"
+            ? d.DishType
+            : (d.DishType || "").toString(),
       };
-      this.intolerancesInput = d.Intolerances || '';
+      this.intolerancesInput = d.Intolerances || "";
+      this.dishTypeInput = this.formData.DishType;
 
       if (d.IngredientsDetails?.length) {
         this.ingredientsDetails = d.IngredientsDetails.map((ing) => ({
@@ -158,7 +159,12 @@ export default {
   },
   methods: {
     addIngredient() {
-      this.ingredientsDetails.push({ Nom: "", Quantite: 1, Unite: "", suggestions: [] });
+      this.ingredientsDetails.push({
+        Nom: "",
+        Quantite: 1,
+        Unite: "",
+        suggestions: [],
+      });
     },
     removeIngredient(i) {
       this.ingredientsDetails.splice(i, 1);
@@ -177,7 +183,7 @@ export default {
     },
     async handleSubmit() {
       this.formData.Intolerances = this.intolerancesInput.trim();
-      // formData.DishType est mis à jour par le <select>
+      this.formData.DishType = this.dishTypeInput.trim();
 
       const ingredients = this.ingredientsDetails.filter(
         (i) => i.Nom && i.Nom.trim()
@@ -208,7 +214,7 @@ export default {
           const err = await r.json();
           throw new Error(err.error || "Erreur lors de l'envoi.");
         }
-        alert(this.isEdit ? "Recette mise à jour !" : "Recette créée !");
+        alert(this.isEdit ? "Recette mise à jour !" : "Recette créée !");
         this.$router.push("/");
       } catch (e) {
         console.error(e);
