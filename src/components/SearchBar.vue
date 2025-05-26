@@ -1,4 +1,3 @@
-<!-- src/components/SearchBar.vue -->
 <template>
   <div class="search-bar">
     <!-- 1) Boutons de filtre multi-select -->
@@ -31,123 +30,123 @@
         @focus="showSuggestions = true"
       />
       <button :disabled="loading" @click="emitSearch">
-        {{ loading ? '…' : 'Rechercher' }}
+        {{ loading ? "…" : "Rechercher" }}
       </button>
     </div>
 
     <!-- 3) Suggestions -->
     <ul v-if="suggestions.length && showSuggestions" class="suggestions">
-      <li
-        v-for="r in suggestions"
-        :key="r.id"
-        @click="selectSuggestion(r)"
-      >
+      <li v-for="r in suggestions" :key="r.id" @click="selectSuggestion(r)">
         {{ r.Name }} <small>({{ r.DishType }})</small>
       </li>
     </ul>
   </div>
 </template>
 
-<script>
-export default {
-  name: "SearchBar",
-  data() {
-    return {
-      localQuery: "",
-      types: ["Entrée", "Plat", "Dessert", "Autre"],
-      selectedTypes: [],
-      suggestions: [],
-      loading: false,
-      showSuggestions: false,
-    };
+<script setup>
+import { ref, watch, defineEmits } from "vue";
+
+// Props/Emits
+const emit = defineEmits(["search"]);
+
+// Reactive data
+const localQuery = ref("");
+const types = ref(["Entrée", "Plat", "Dessert", "Autre"]);
+const selectedTypes = ref([]);
+const suggestions = ref([]);
+const loading = ref(false);
+const showSuggestions = ref(false);
+
+// Watchers
+watch(localQuery, () => {
+  fetchSuggestions();
+});
+
+watch(
+  selectedTypes,
+  () => {
+    fetchSuggestions();
   },
-  watch: {
-    // relance auto-complétion à chaque frappe ou changement de filtres
-    localQuery() {
-      this.fetchSuggestions();
-    },
-    selectedTypes() {
-      this.fetchSuggestions();
-    },
-  },
-  methods: {
-    toggleType(type) {
-      const idx = this.selectedTypes.indexOf(type);
-      if (idx === -1) {
-        this.selectedTypes.push(type);
-      } else {
-        this.selectedTypes.splice(idx, 1);
-      }
-    },
-    clearTypes() {
-      this.selectedTypes = [];
-    },
+  { deep: true }
+);
 
-    async fetchSuggestions() {
-      const q = this.localQuery.trim();
-      // si tout est vide, on ne montre ni suggestion ni appel réseau
-      if (!q && this.selectedTypes.length === 0) {
-        this.suggestions = [];
-        this.showSuggestions = false;
-        return;
-      }
+// Methods
+const toggleType = (type) => {
+  const idx = selectedTypes.value.indexOf(type);
+  if (idx === -1) {
+    selectedTypes.value.push(type);
+  } else {
+    selectedTypes.value.splice(idx, 1);
+  }
+};
 
-      this.loading = true;
-      try {
-        const params = new URLSearchParams();
-        if (q) params.append("q", q);
-        // un param type=<t> par filtre
-        this.selectedTypes.forEach(t => params.append("type", t));
+const clearTypes = () => {
+  selectedTypes.value = [];
+};
 
-        const res = await fetch(
-          `http://localhost:3000/api/recherche?${params.toString()}`
-        );
-        this.suggestions = res.ok ? await res.json() : [];
-        this.showSuggestions = true;
-      } catch (e) {
-        console.error("Recherche échouée :", e);
-        this.suggestions = [];
-        this.showSuggestions = false;
-      } finally {
-        this.loading = false;
-      }
-    },
+const fetchSuggestions = async () => {
+  const q = localQuery.value.trim();
+  // si tout est vide, on ne montre ni suggestion ni appel réseau
+  if (!q && selectedTypes.value.length === 0) {
+    suggestions.value = [];
+    showSuggestions.value = false;
+    return;
+  }
 
-    selectSuggestion(recipe) {
-      this.localQuery = recipe.Name;
-      this.showSuggestions = false;
-      this.suggestions = [];
-      this.$emit("search", [recipe]);
-    },
+  loading.value = true;
+  try {
+    const params = new URLSearchParams();
+    if (q) params.append("q", q);
+    // un param type=<t> par filtre
+    selectedTypes.value.forEach((t) => params.append("type", t));
 
-    async emitSearch() {
-      const q = this.localQuery.trim();
-      if (!q && this.selectedTypes.length === 0) return;
+    const res = await fetch(
+      `http://localhost:3000/api/recherche?${params.toString()}`
+    );
+    suggestions.value = res.ok ? await res.json() : [];
+    showSuggestions.value = true;
+  } catch (e) {
+    console.error("Recherche échouée :", e);
+    suggestions.value = [];
+    showSuggestions.value = false;
+  } finally {
+    loading.value = false;
+  }
+};
 
-      this.loading = true;
-      this.showSuggestions = false;
-      try {
-        const params = new URLSearchParams();
-        if (q) params.append("q", q);
-        this.selectedTypes.forEach(t => params.append("type", t));
+const selectSuggestion = (recipe) => {
+  localQuery.value = recipe.Name;
+  showSuggestions.value = false;
+  suggestions.value = [];
+  emit("search", [recipe]);
+};
 
-        const res = await fetch(
-          `http://localhost:3000/api/recherche?${params.toString()}`
-        );
-        const results = res.ok ? await res.json() : [];
-        this.$emit("search", results);
-      } catch (e) {
-        console.error("Recherche échouée :", e);
-        this.$emit("search", []);
-      } finally {
-        this.loading = false;
-      }
-    },
-  },
+const emitSearch = async () => {
+  const q = localQuery.value.trim();
+  if (!q && selectedTypes.value.length === 0) return;
+
+  loading.value = true;
+  showSuggestions.value = false;
+  try {
+    const params = new URLSearchParams();
+    if (q) params.append("q", q);
+    selectedTypes.value.forEach((t) => params.append("type", t));
+
+    const res = await fetch(
+      `http://localhost:3000/api/recherche?${params.toString()}`
+    );
+    const results = res.ok ? await res.json() : [];
+    emit("search", results);
+  } catch (e) {
+    console.error("Recherche échouée :", e);
+    emit("search", []);
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .search-bar {
   position: relative;
   max-width: 600px;
@@ -157,7 +156,7 @@ export default {
 .type-filters {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin: 20px 0 10px 0;
 }
 .type-filters button {
   padding: 0.4rem 0.8rem;
@@ -166,16 +165,21 @@ export default {
   color: #f6931e;
   border-radius: 3px;
   cursor: pointer;
-  transition: background .2s, color .2s;
+  transition: background 0.2s, color 0.2s;
+  &:hover {
+    background: #f6931e;
+    color: white;
+  }
 }
 .type-filters button.active {
   background: #f6931e;
   color: white;
 }
+
 .type-filters button.clear {
   background: transparent;
   border: none;
-  color: #666;
+  color: #707070;
   font-weight: bold;
 }
 

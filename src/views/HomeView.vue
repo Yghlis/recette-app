@@ -1,9 +1,7 @@
-<!-- src/views/HomeView.vue -->
 <template>
   <div class="home-view">
     <h2>Recettes Personnalisées</h2>
 
-    <!-- on place SearchBar ici -->
     <SearchBar @search="onSearch" />
 
     <div v-if="loading">Chargement...</div>
@@ -13,7 +11,8 @@
       </div>
       <ul v-else class="recipe-list">
         <li v-for="r in recipes" :key="r.id">
-          <strong>{{ r.Name }}</strong> – <em>{{ formatDishType(r.DishType) }}</em>
+          <strong>{{ r.Name }}</strong> –
+          <em>{{ formatDishType(r.DishType) }}</em>
           <div class="actions">
             <router-link :to="`/recipe/${r.id}`">Voir</router-link>
             <router-link :to="`/edit/${r.id}`">Modifier</router-link>
@@ -55,7 +54,7 @@ export default {
         if (res.ok) {
           alert(json.message);
           // on rafraîchit la page ou la liste
-          this.recipes = this.recipes.filter(r => r.id !== id);
+          this.recipes = this.recipes.filter((r) => r.id !== id);
         } else {
           alert(json.error);
         }
@@ -69,16 +68,15 @@ export default {
     // on charge toutes les recettes par défaut (quand SearchBar n'a rien tapé)
     this.loading = true;
     fetch("http://localhost:3000/api/recettes")
-      .then(r => r.json())
-      .then(data => (this.recipes = data))
+      .then((r) => r.json())
+      .then((data) => (this.recipes = data))
       .catch(console.error)
       .finally(() => (this.loading = false));
   },
 };
 </script>
 
-
-<style scoped>
+<style scoped lang="scss">
 .home-view {
   padding: 1rem;
 }

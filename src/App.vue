@@ -2,7 +2,10 @@
 <template>
   <div id="app">
     <header class="app-header">
-      <h1>Recettes Personnalisées</h1>
+      <div class="logo">
+        <img src="./assets/logoAi.png" alt="Recettes Personnalisées Logo" />
+        <h1>Recettes Personnalisées</h1>
+      </div>
 
       <nav class="nav-bar">
         <router-link to="/">Accueil</router-link>
@@ -16,21 +19,67 @@
     </header>
 
     <main class="app-main">
-      <router-view :search-query="searchQuery" />
+      <RouterView v-slot="{ Component }" :search-query="searchQuery">
+        <transition name="page" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </RouterView>
     </main>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from "vue";
 
-export default {
-  name: "AppRoot",
+const searchQuery = ref("");
 
-  data: () => ({ searchQuery: "" }),
-  methods: {
-    handleSearch(q) {
-      this.searchQuery = q;
-    },
-  },
+const handleSearch = (q) => {
+  searchQuery.value = q;
 };
 </script>
+
+<style scoped lang="scss">
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  img {
+    width: 100px;
+  }
+}
+
+.nav-bar {
+  color: $primary-color;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+  a {
+    text-decoration: none;
+    color: inherit;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+
+    &:hover, &.router-link-active {
+      background-color: $primary-color;
+      color: white;
+    }
+  }
+}
+
+
+
+
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}
+</style>
